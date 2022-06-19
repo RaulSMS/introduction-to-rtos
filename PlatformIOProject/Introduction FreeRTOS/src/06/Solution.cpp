@@ -1,5 +1,5 @@
 /**
- * FreeRTOS Mutex Challenge
+ * FreeRTOS Mutex Solution
  * 
  * Pass a parameter to a task using a mutex.
  * 
@@ -10,7 +10,6 @@
 
 // You'll likely need this on vanilla FreeRTOS
 //#include <semphr.h>
-
 #include <Arduino.h>
 // Use only core 1 for demo purposes
 #if CONFIG_FREERTOS_UNICORE
@@ -19,7 +18,11 @@
   static const BaseType_t app_cpu = 1;
 #endif
 
+// Pins (change this if your Arduino board does not have LED_BUILTIN defined)
 static const int led_pin = 13;
+
+// Globals
+static SemaphoreHandle_t mutex;
 
 //*****************************************************************************
 // Tasks
@@ -29,6 +32,9 @@ void blinkLED(void *parameters) {
 
   // Copy the parameter into a local variable
   int num = *(int *)parameters;
+
+  // Release the mutex so that the creating function can finish
+  xSemaphoreGive(mutex);
 
   // Print the parameter
   Serial.print("Received: ");
@@ -59,7 +65,7 @@ void setup() {
   // Wait a moment to start (so we don't miss Serial output)
   vTaskDelay(1000 / portTICK_PERIOD_MS);
   Serial.println();
-  Serial.println("---FreeRTOS Mutex Challenge---");
+  Serial.println("---FreeRTOS Mutex Solution---");
   Serial.println("Enter a number for delay (milliseconds)");
 
   // Wait for input from Serial
@@ -69,6 +75,12 @@ void setup() {
   delay_arg = Serial.parseInt();
   Serial.print("Sending: ");
   Serial.println(delay_arg);
+  
+  // Create mutex before starting tasks
+  mutex = xSemaphoreCreateMutex();
+
+  // Take the mutex
+  xSemaphoreTake(mutex, portMAX_DELAY);
 
   // Start task 1
   xTaskCreatePinnedToCore(blinkLED,
@@ -78,6 +90,9 @@ void setup() {
                           1,
                           NULL,
                           app_cpu);
+
+  // Do nothing until mutex has been returned (maximum delay)
+  xSemaphoreTake(mutex, portMAX_DELAY);
 
   // Show that we accomplished our task of passing the stack-based argument
   Serial.println("Done!");
