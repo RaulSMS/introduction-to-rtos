@@ -67,16 +67,16 @@ void producer(void *parameters) {
 void consumer(void *parameters) {
 
   int val;
+  int Delay = 1000; // In miliseconds
   // Read from buffer
   while (1) {
-    if (xQueueReceive(queue, (void *)&val, 1) == pdTRUE) {
-      // Print val
+  if (xQueueReceive(queue, (void *)&val, Delay) == pdTRUE){
       Serial.println(val);
-    } else {
-      // Print task executed and wait 1 second
-      Serial.println("Task consumer executed and waited 1 second");
-      vTaskDelay(1000/portTICK_PERIOD_MS);
-    }
+  }else {
+    Serial.println("Queue is empty");
+    Serial.print(Delay);
+    Serial.println(" milisecond econds elapsed");
+  }
   }
 }
 
